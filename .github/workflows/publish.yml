@@ -3,7 +3,7 @@ name: Publish
 on:
   push:
     tags:
-      - '[0-9]*'
+      - v*
 
 jobs:
   test:
