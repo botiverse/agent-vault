@@ -5,14 +5,12 @@ import { randomBytes, createCipheriv, createDecipheriv } from "node:crypto";
 
 // --- Vault location ---
 
-const VAULT_DIR = join(homedir(), ".agent-vault");
-
 export function getVaultDir(): string {
-  return VAULT_DIR;
+  return process.env.AGENT_VAULT_DIR || join(homedir(), ".agent-vault");
 }
 
 export function vaultExists(): boolean {
-  return existsSync(join(VAULT_DIR, "vault.json"));
+  return existsSync(join(getVaultDir(), "vault.json"));
 }
 
 export function requireVault(): string {
@@ -20,28 +18,28 @@ export function requireVault(): string {
     console.error("✗ No vault found. Run: agent-vault init");
     process.exit(1);
   }
-  return VAULT_DIR;
+  return getVaultDir();
 }
 
 // --- Vault initialization ---
 
 export function initVault(): string {
-  if (existsSync(join(VAULT_DIR, "vault.json"))) {
-    return VAULT_DIR;
+  if (existsSync(join(getVaultDir(), "vault.json"))) {
+    return getVaultDir();
   }
 
-  mkdirSync(VAULT_DIR, { recursive: true, mode: 0o700 });
+  mkdirSync(getVaultDir(), { recursive: true, mode: 0o700 });
 
   // Generate master key (32 bytes = 256 bits)
   const masterKey = randomBytes(32);
-  const keyPath = join(VAULT_DIR, "vault.key");
+  const keyPath = join(getVaultDir(), "vault.key");
   writeFileSync(keyPath, masterKey.toString("hex"), { mode: 0o600 });
 
   // Create empty vault
-  const vaultPath = join(VAULT_DIR, "vault.json");
+  const vaultPath = join(getVaultDir(), "vault.json");
   writeFileSync(vaultPath, JSON.stringify({ secrets: {} }, null, 2), { mode: 0o600 });
 
-  return VAULT_DIR;
+  return getVaultDir();
 }
 
 // --- Encryption ---
@@ -49,7 +47,7 @@ export function initVault(): string {
 const ALGO = "aes-256-gcm";
 
 function loadMasterKey(): Buffer {
-  const keyPath = join(VAULT_DIR, "vault.key");
+  const keyPath = join(getVaultDir(), "vault.key");
   if (!existsSync(keyPath)) {
     console.error("✗ Vault key not found. Vault may be corrupted.");
     process.exit(1);
@@ -89,7 +87,7 @@ interface VaultData {
 }
 
 function loadVaultData(): VaultData {
-  const vaultPath = join(VAULT_DIR, "vault.json");
+  const vaultPath = join(getVaultDir(), "vault.json");
   if (!existsSync(vaultPath)) {
     return { secrets: {} };
   }
@@ -97,7 +95,7 @@ function loadVaultData(): VaultData {
 }
 
 function saveVaultData(data: VaultData): void {
-  const vaultPath = join(VAULT_DIR, "vault.json");
+  const vaultPath = join(getVaultDir(), "vault.json");
   writeFileSync(vaultPath, JSON.stringify(data, null, 2), { mode: 0o600 });
 }
 
