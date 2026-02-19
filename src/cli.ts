@@ -2,7 +2,8 @@
 
 import { Command } from "commander";
 import { readFileSync, existsSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { resolve, dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   vaultExists,
   initVault,
@@ -18,12 +19,15 @@ import {
 import { redact, restore } from "./redact.js";
 import { requireTTY, promptSecret, confirm } from "./tty.js";
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf-8"));
+
 const program = new Command();
 
 program
   .name("agent-vault")
-  .description("Secure secret management for AI agent config files")
-  .version("0.1.0");
+  .description(pkg.description)
+  .version(pkg.version);
 
 // ──────────────────────────────────────────────
 // SAFE COMMANDS (agent + human)
