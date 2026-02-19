@@ -1,7 +1,7 @@
 {
   "name": "@botiverse/agent-vault",
   "version": "0.2.0",
-  "description": "Keep your secrets hidden from AI coding agents.",
+  "description": "Keep your secrets hidden from AI agents.",
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
