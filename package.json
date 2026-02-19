@@ -1,0 +1,45 @@
+{
+  "name": "agent-vault",
+  "version": "0.1.0",
+  "description": "Secure secret management for AI agent config files. Read/write files without exposing secrets.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "agent-vault": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/agent-vault"
+  },
+  "keywords": [
+    "agent",
+    "vault",
+    "secrets",
+    "cli",
+    "ai",
+    "security",
+    "redaction"
+  ]
+}

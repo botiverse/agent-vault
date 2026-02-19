@@ -1,0 +1,4 @@
+node_modules/
+dist/
+.agent-vault/
+*.tgz
