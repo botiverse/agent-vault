@@ -16,7 +16,7 @@ import {
   removeSecret,
   getAllSecretValues,
 } from "./vault.js";
-import { redact, restore } from "./redact.js";
+import { redact, restore, restoreUnvaulted } from "./redact.js";
 import { requireTTY, promptSecret, confirm } from "./tty.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -95,9 +95,35 @@ program
       process.exit(1);
     }
 
-    writeFileSync(filePath, result.content, { mode: 0o644 });
-    const count = result.restored.length;
+    // Restore UNVAULTED placeholders from the existing file
+    let finalContent = result.content;
+    let unvaultedCount = 0;
+
+    if (/<agent-vault:UNVAULTED:sha256:[a-f0-9]{8}>/.test(finalContent)) {
+      if (!existsSync(filePath)) {
+        console.error("✗ Error: Content contains UNVAULTED placeholders but the target file does not exist yet");
+        console.error("  The user should vault these secrets first: agent-vault set <key>");
+        process.exit(1);
+      }
+
+      const existingContent = readFileSync(filePath, "utf-8");
+      const unvaulted = restoreUnvaulted(finalContent, existingContent);
+      finalContent = unvaulted.content;
+      unvaultedCount = unvaulted.restoredCount;
+
+      if (unvaulted.unmatched.length > 0) {
+        console.error(`✗ Error: Could not restore ${unvaulted.unmatched.length} UNVAULTED placeholder(s) — no matching value in existing file`);
+        console.error("  The user should vault these secrets: agent-vault set <key>");
+        process.exit(1);
+      }
+    }
+
+    writeFileSync(filePath, finalContent, { mode: 0o644 });
+    const count = result.restored.length + unvaultedCount;
     console.log(`✓ Written ${file} (${count} secret${count !== 1 ? "s" : ""} restored)`);
+    if (unvaultedCount > 0) {
+      console.error(`⚠ ${unvaultedCount} unvaulted secret(s) restored from existing file — consider running: agent-vault import`);
+    }
   });
 
 program

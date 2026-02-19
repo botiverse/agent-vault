@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createHash } from "node:crypto";
-import { redact, restore, extractPlaceholders } from "../../src/redact.js";
+import { redact, restore, restoreUnvaulted, extractPlaceholders } from "../../src/redact.js";
 
 function sha256Prefix(s: string): string {
   return createHash("sha256").update(s).digest("hex").slice(0, 8);
@@ -260,5 +260,81 @@ describe("extractPlaceholders", () => {
 
   it("does not match keys ending with hyphen", () => {
     expect(extractPlaceholders("<agent-vault:bad->")).toEqual([]);
+  });
+});
+
+// --- restoreUnvaulted ---
+
+describe("restoreUnvaulted", () => {
+  const secretValue = "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890";
+  const hash = sha256Prefix(secretValue);
+
+  it("restores UNVAULTED placeholder from existing file content", () => {
+    const content = `API_KEY=<agent-vault:UNVAULTED:sha256:${hash}>\nport: 3000`;
+    const existing = `API_KEY=${secretValue}\nport: 3000`;
+
+    const result = restoreUnvaulted(content, existing);
+    expect(result.content).toBe(`API_KEY=${secretValue}\nport: 3000`);
+    expect(result.restoredCount).toBe(1);
+    expect(result.unmatched).toEqual([]);
+  });
+
+  it("restores multiple UNVAULTED placeholders", () => {
+    const secret2 = "ghp_abcdefghijklmnopqrstuvwxyz1234567890AB";
+    const hash2 = sha256Prefix(secret2);
+    const content = `A=<agent-vault:UNVAULTED:sha256:${hash}>\nB=<agent-vault:UNVAULTED:sha256:${hash2}>`;
+    const existing = `A=${secretValue}\nB=${secret2}`;
+
+    const result = restoreUnvaulted(content, existing);
+    expect(result.content).toBe(existing);
+    expect(result.restoredCount).toBe(2);
+  });
+
+  it("reports unmatched hashes when existing file has no match", () => {
+    const content = `API_KEY=<agent-vault:UNVAULTED:sha256:deadbeef>`;
+    const existing = `API_KEY=short`;
+
+    const result = restoreUnvaulted(content, existing);
+    expect(result.content).toContain("UNVAULTED");
+    expect(result.restoredCount).toBe(0);
+    expect(result.unmatched).toEqual(["deadbeef"]);
+  });
+
+  it("leaves non-UNVAULTED placeholders untouched", () => {
+    const content = `A=<agent-vault:my-key>\nB=<agent-vault:UNVAULTED:sha256:${hash}>`;
+    const existing = `A=something\nB=${secretValue}`;
+
+    const result = restoreUnvaulted(content, existing);
+    expect(result.content).toContain("<agent-vault:my-key>");
+    expect(result.content).toContain(secretValue);
+    expect(result.restoredCount).toBe(1);
+  });
+
+  it("returns content unchanged when no UNVAULTED placeholders present", () => {
+    const content = "port: 3000\nhost: localhost";
+    const existing = "port: 8080\nhost: localhost";
+
+    const result = restoreUnvaulted(content, existing);
+    expect(result.content).toBe(content);
+    expect(result.restoredCount).toBe(0);
+    expect(result.unmatched).toEqual([]);
+  });
+
+  it("handles YAML-style values in existing file", () => {
+    const content = `token: <agent-vault:UNVAULTED:sha256:${hash}>`;
+    const existing = `token: ${secretValue}`;
+
+    const result = restoreUnvaulted(content, existing);
+    expect(result.content).toBe(`token: ${secretValue}`);
+    expect(result.restoredCount).toBe(1);
+  });
+
+  it("handles JSON-style values in existing file", () => {
+    const content = `  "api_key": "<agent-vault:UNVAULTED:sha256:${hash}>"`;
+    const existing = `  "api_key": "${secretValue}"`;
+
+    const result = restoreUnvaulted(content, existing);
+    expect(result.content).toBe(`  "api_key": "${secretValue}"`);
+    expect(result.restoredCount).toBe(1);
   });
 });

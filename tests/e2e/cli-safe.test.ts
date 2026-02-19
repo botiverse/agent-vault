@@ -150,6 +150,66 @@ describe("agent-vault write", () => {
 
     removeTempVaultDir(emptyVault);
   });
+
+  it("restores UNVAULTED placeholders from existing file", () => {
+    initAndSet("dummy", "dummy-value-12345");
+    const filePath = join(workDir, "config.env");
+    const secretValue = "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890";
+
+    // Create the original file with real secret
+    writeFileSync(filePath, `API_KEY=${secretValue}\nPORT=3000\n`);
+
+    // Read it (gets UNVAULTED placeholder)
+    const { stdout: readOut } = run(["read", filePath], { vaultDir });
+    expect(readOut).toContain("UNVAULTED");
+    expect(readOut).not.toContain(secretValue);
+
+    // Extract the UNVAULTED line from read output
+    const lines = readOut.split("\n");
+    const apiLine = lines.find((l: string) => l.includes("API_KEY"))!;
+    const portLine = lines.find((l: string) => l.includes("PORT"))!;
+    const contentToWrite = apiLine.replace(/^\s*\d+\t/, "") + "\n" + portLine.replace(/^\s*\d+\t/, "") + "\n";
+
+    // Write back with UNVAULTED placeholder
+    const { stdout, stderr, exitCode } = run(
+      ["write", filePath, "--content", contentToWrite],
+      { vaultDir },
+    );
+    expect(exitCode).toBe(0);
+    expect(stderr).toContain("unvaulted secret");
+
+    // Verify file still has real value
+    const final = readFileSync(filePath, "utf-8");
+    expect(final).toContain(secretValue);
+    expect(final).toContain("PORT=3000");
+    expect(final).not.toContain("UNVAULTED");
+  });
+
+  it("exits 1 when UNVAULTED placeholder has no existing file to restore from", () => {
+    initAndSet("dummy", "dummy-value-12345");
+    const filePath = join(workDir, "new-file.env");
+
+    const { exitCode, stderr } = run(
+      ["write", filePath, "--content", "KEY=<agent-vault:UNVAULTED:sha256:deadbeef>"],
+      { vaultDir },
+    );
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain("UNVAULTED");
+    expect(stderr).toContain("does not exist");
+  });
+
+  it("exits 1 when UNVAULTED hash cannot be matched in existing file", () => {
+    initAndSet("dummy", "dummy-value-12345");
+    const filePath = join(workDir, "config.env");
+    writeFileSync(filePath, "KEY=short\n");
+
+    const { exitCode, stderr } = run(
+      ["write", filePath, "--content", "KEY=<agent-vault:UNVAULTED:sha256:deadbeef>"],
+      { vaultDir },
+    );
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain("Could not restore");
+  });
 });
 
 // --- has ---

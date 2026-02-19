@@ -197,6 +197,52 @@ export function restore(
 }
 
 /**
+ * Restore UNVAULTED placeholders by matching sha256 prefixes against
+ * high-entropy tokens found in the existing file on disk.
+ *
+ * @param content - Content with <agent-vault:UNVAULTED:sha256:...> placeholders
+ * @param existingContent - The current file content on disk
+ * @returns Object with restored content, count of restored tokens, and unmatched hashes
+ */
+export function restoreUnvaulted(
+  content: string,
+  existingContent: string,
+): { content: string; restoredCount: number; unmatched: string[] } {
+  // Build a map: sha256_prefix → original value from existing file
+  const hashToValue = new Map<string, string>();
+  const existingLines = existingContent.split("\n");
+
+  for (const line of existingLines) {
+    const candidates = extractValueCandidates(line);
+    for (const candidate of candidates) {
+      const trimmed = candidate.trim().replace(/^["']|["'],?$/g, "");
+      if (trimmed.length < HIGH_ENTROPY_MIN_LENGTH) continue;
+      if (matchesSecretPattern(trimmed) || isHighEntropy(trimmed)) {
+        const hash = sha256Prefix(trimmed);
+        hashToValue.set(hash, trimmed);
+      }
+    }
+  }
+
+  let restoredCount = 0;
+  const unmatched: string[] = [];
+
+  const result = content.replace(UNVAULTED_RE, (match) => {
+    const hash = match.match(/sha256:([a-f0-9]{8})/)?.[1];
+    if (!hash) return match;
+    const value = hashToValue.get(hash);
+    if (value) {
+      restoredCount++;
+      return value;
+    }
+    unmatched.push(hash);
+    return match;
+  });
+
+  return { content: result, restoredCount, unmatched };
+}
+
+/**
  * Extract all <agent-vault:key> placeholder references from content.
  */
 export function extractPlaceholders(content: string): string[] {
