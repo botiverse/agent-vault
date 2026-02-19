@@ -2,7 +2,7 @@
 
 ## Problem
 
-When AI coding agents (Claude Code, Codex, OpenCode, etc.) help users configure environments — setting up bot tokens, API keys, database credentials — the secrets flow through the LLM provider's servers. With proxies or relay services in the middle, the risk of leakage multiplies. Users currently have no good way to let agents manage config files without exposing secrets.
+When AI agents help users configure environments — setting up bot tokens, API keys, database credentials — the secrets flow through the LLM provider's servers. With proxies or relay services in the middle, the risk of leakage multiplies. Users currently have no good way to let agents manage config files without exposing secrets.
 
 ## Solution
 

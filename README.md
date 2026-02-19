@@ -2,7 +2,7 @@
 
 Keep your secrets hidden from AI agents.
 
-When AI coding agents (Claude Code, Codex, OpenCode) help you set up services, secrets like API keys and tokens flow through LLM provider servers. **agent-vault** prevents this by acting as a secret-aware file I/O layer — agents see placeholders like `<agent-vault:api-key>`, never real values.
+When AI agents help you set up services, secrets like API keys and tokens flow through LLM provider servers. **agent-vault** prevents this by acting as a secret-aware file I/O layer — agents see placeholders like `<agent-vault:api-key>`, never real values.
 
 ```
 ┌──────────────────────────────────────────────┐
