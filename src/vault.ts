@@ -15,7 +15,7 @@ export function vaultExists(): boolean {
 
 export function requireVault(): string {
   if (!vaultExists()) {
-    console.error("✗ No vault found. Run: agent-vault init");
+    console.error("✗ No vault found. The user should run: agent-vault set <key> (auto-initializes the vault)");
     process.exit(1);
   }
   return getVaultDir();
