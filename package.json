@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
-    "agent-vault": "./dist/cli.js"
+    "agent-vault": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -35,7 +35,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/botiverse/agent-vault"
+    "url": "git+https://github.com/botiverse/agent-vault.git"
   },
   "keywords": [
     "agent",
