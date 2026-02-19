@@ -25,7 +25,7 @@ When AI coding agents (Claude Code, Codex, OpenCode) help you set up services, s
 ## Install
 
 ```bash
-npm install -g agent-vault
+npm install -g @botiverse/agent-vault
 ```
 
 ## Quick start
