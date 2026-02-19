@@ -484,7 +484,7 @@ Agent:  [executes] agent-vault write config.yaml --content '...<agent-vault:stri
 ### Installation
 
 ```bash
-npx skills add agent-vault
+npx skills add botiverse/agent-vault
 ```
 
 ### SKILL.md

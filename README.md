@@ -200,16 +200,8 @@ agent-vault scan config.yaml
 
 ### Skill installation
 
-For Claude Code, Cursor, Windsurf, and other agents that support skills:
-
 ```bash
-npx skills add agent-vault
-```
-
-Or manually copy:
-
-```bash
-cp -r node_modules/agent-vault/skills/agent-vault .claude/skills/
+npx skills add botiverse/agent-vault
 ```
 
 The skill teaches agents:
