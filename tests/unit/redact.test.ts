@@ -112,7 +112,7 @@ describe("redact — Phase 2: unvaulted high-entropy detection", () => {
     expect(result).not.toContain("UNVAULTED");
   });
 
-  it("does NOT flag strings < 16 chars", () => {
+  it("does NOT flag strings < 12 chars", () => {
     const result = redact("SHORT=abcde12345", emptyMap);
     expect(result).not.toContain("UNVAULTED");
   });
@@ -161,6 +161,97 @@ describe("redact — Phase 2: unvaulted high-entropy detection", () => {
   it("does not flag all-same-char string (zero entropy)", () => {
     const result = redact("KEY=aaaaaaaaaaaaaaaaaaaaaa", emptyMap);
     expect(result).not.toContain("UNVAULTED");
+  });
+
+  // --- False positive prevention: structured values ---
+
+  it("does NOT flag array values (TOML/JSON style)", () => {
+    const result = redact('capabilities = ["image_in", "video_in", "thinking"]', emptyMap);
+    expect(result).not.toContain("UNVAULTED");
+  });
+
+  it("does NOT flag object/dict values", () => {
+    const result = redact('config = {"mode": "production", "debug": false}', emptyMap);
+    expect(result).not.toContain("UNVAULTED");
+  });
+
+  it("does NOT flag URL values", () => {
+    const result = redact("base_url = https://api.example-service.com/v1/chat", emptyMap);
+    expect(result).not.toContain("UNVAULTED");
+  });
+
+  it("does NOT flag domain-like values", () => {
+    const result = redact("host = my-service.us-east-1.amazonaws.com", emptyMap);
+    expect(result).not.toContain("UNVAULTED");
+  });
+
+  it("does NOT flag file path values", () => {
+    const result = redact("data_dir = /var/lib/myapp/data/storage", emptyMap);
+    expect(result).not.toContain("UNVAULTED");
+  });
+
+  it("does NOT flag relative path values", () => {
+    const result = redact("config_path = ./configs/production/app.toml", emptyMap);
+    expect(result).not.toContain("UNVAULTED");
+  });
+
+  it("does NOT flag home-relative path values", () => {
+    const result = redact("config_path = ~/Projects/myapp/config.json", emptyMap);
+    expect(result).not.toContain("UNVAULTED");
+  });
+
+  // --- False positive prevention: word-like segments ---
+
+  it("does NOT flag hyphenated word values (kimi-for-coding)", () => {
+    const result = redact('model = "kimi-for-coding"', emptyMap);
+    expect(result).not.toContain("UNVAULTED");
+  });
+
+  it("does NOT flag namespaced values (managed:kimi-code)", () => {
+    const result = redact('provider = "managed:kimi-code"', emptyMap);
+    expect(result).not.toContain("UNVAULTED");
+  });
+
+  it("does NOT flag underscore-separated words (moonshot_search)", () => {
+    const result = redact("service_name = moonshot_search_engine", emptyMap);
+    expect(result).not.toContain("UNVAULTED");
+  });
+
+  it("does NOT flag slash-separated word paths (oauth/kimi-code)", () => {
+    const result = redact('key = "oauth/kimi-code"', emptyMap);
+    expect(result).not.toContain("UNVAULTED");
+  });
+
+  it("does flag mixed alpha-digit segments (random password)", () => {
+    const result = redact("PASSWORD=sd87adf79uojf", emptyMap);
+    expect(result).toContain("<agent-vault:UNVAULTED:sha256:");
+  });
+
+  it("does flag alternating case+digit segments", () => {
+    const result = redact("TOKEN=aB3dE5gH7jK9mN", emptyMap);
+    expect(result).toContain("<agent-vault:UNVAULTED:sha256:");
+  });
+
+  it("does flag pure-lowercase random strings (bad bigrams)", () => {
+    const result = redact("PASSWORD=xqzmjvftpkwlrn", emptyMap);
+    expect(result).toContain("<agent-vault:UNVAULTED:sha256:");
+  });
+
+  it("does NOT flag English-like lowercase words", () => {
+    const result = redact('provider = "managed-authentication"', emptyMap);
+    expect(result).not.toContain("UNVAULTED");
+  });
+
+  it("flags value when any segment has mixed char classes", () => {
+    // "correct" and "horse" are word-like, but "Xk9m2Qr5" is not
+    const result = redact("KEY=correct-horse-Xk9m2Qr5", emptyMap);
+    expect(result).toContain("<agent-vault:UNVAULTED:sha256:");
+  });
+
+  it("still flags known patterns inside array values", () => {
+    const token = "sk-ant-aBcDeFgHiJkLmNoPqRsTuVwXyZ012345";
+    const result = redact(`tokens = ["${token}"]`, emptyMap);
+    expect(result).toContain("<agent-vault:UNVAULTED:sha256:");
   });
 });
 

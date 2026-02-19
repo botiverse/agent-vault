@@ -1,6 +1,6 @@
 ---
 name: agent-vault
-description: Secure secret management — read/write config files without exposing secrets to the agent.
+description: Read/write config files (.env, YAML, TOML, JSON, docker-compose, etc.) safely. Use this instead of Read/Write/Edit tools whenever touching config files that may contain API keys, tokens, passwords, or other secrets — it auto-detects and redacts them.
 ---
 
 # agent-vault
