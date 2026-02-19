@@ -1,7 +1,7 @@
 {
   "name": "agent-vault",
   "version": "0.1.0",
-  "description": "Secure secret management for AI agent config files. Read/write files without exposing secrets.",
+  "description": "Keep your secrets hidden from AI coding agents.",
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
@@ -16,22 +16,26 @@
     "build": "tsc",
     "dev": "tsx src/cli.ts",
     "start": "node dist/cli.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "commander": "^13.1.0"
+    "commander": "^14.0.3"
   },
   "devDependencies": {
-    "@types/node": "^22.13.0",
-    "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "@types/node": "^25.3.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   },
   "engines": {
     "node": ">=18"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/user/agent-vault"
+    "url": "https://github.com/botiverse/agent-vault"
   },
   "keywords": [
     "agent",
