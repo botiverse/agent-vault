@@ -35,11 +35,11 @@ jobs:
           cache: npm
           registry-url: https://registry.npmjs.org
 
+      - run: npm install -g npm@latest
+
       - run: npm ci
       - run: npm run build
       - run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
         run: gh release create "$GITHUB_REF_NAME" --generate-notes
